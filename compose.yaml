@@ -1,0 +1,38 @@
+services:
+  registry:
+    image: registry:2
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - registrydata:/data
+    networks:
+      - app
+
+  app:
+    image: app:latest
+    build:
+      context: .
+      target: final
+      tags:
+        - registry:5000/app:latest
+        - registry:5000/app:lerolero
+      x-bake:
+        platforms:
+          - "linux/amd64"
+        cache-to:
+          - type=registry,registry.insecure=true,ref=registry:5000/app-cache,mode=max
+        cache-from:
+          - type=registry,registry.insecure=true,ref=registry:5000/app-cache
+        output: type=image,registry.insecure=true
+
+    ports:
+      - 9292:9292
+
+volumes:
+  registrydata:
+    driver: local
+
+networks:
+  app:
+    external: true
